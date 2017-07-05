@@ -465,7 +465,7 @@ static inline bool matrix_pseudoinv(const float *a, float *out,
 		const float (*my_a)[rows*cols] = &(a); \
 		const float (*my_b)[rows*cols] = &(b); \
 		float (*my_out)[rows*cols] = &(out); \
-		matrix_add(*my_a, *my_b, *my_out, rows, cols) \
+		matrix_add(*my_a, *my_b, *my_out, rows, cols); \
 	} while (0);
 
 #define matrix_sub_check(a, b, out, rows, cols) \
@@ -474,7 +474,7 @@ static inline bool matrix_pseudoinv(const float *a, float *out,
 		const float (*my_a)[rows*cols] = &(a); \
 		const float (*my_b)[rows*cols] = &(b); \
 		float (*my_out)[rows*cols] = &(out); \
-		matrix_sub(*my_a, *my_b, *my_out, rows, cols) \
+		matrix_sub(*my_a, *my_b, *my_out, rows, cols); \
 	} while (0);
 
 #define matrix_transpose_check(a, b, out, rows, cols) \
