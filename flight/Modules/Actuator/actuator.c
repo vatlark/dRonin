@@ -347,7 +347,7 @@ static void compute_one_mixer(int mixnum,
 	// should use the second curve to back out the tilt angle
 
 	ActuatorCommandData actCmd;
-	ActuatorCommandSet(&actCmd);
+	ActuatorCommandGet(&actCmd);
 	float rotorTiltActual = actCmd.Channel[4]*90.0f; //assuming full range of rotation is 90d
 
 	// rotate the mixture of a tiltrotor

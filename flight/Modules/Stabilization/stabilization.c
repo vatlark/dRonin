@@ -542,7 +542,7 @@ static void stabilizationTask(void* parameters)
 		
 		//get actuator commanded position
 		ActuatorCommandData actCmd;
-		ActuatorCommandSet(&actCmd);
+		ActuatorCommandGet(&actCmd);
 		float rotorTiltActual = actCmd.Channel[4]*90.0f; //assuming full range of rotation is 90deg
 		local_attitude_error[PITCH] -= rotorTiltActual;
 
