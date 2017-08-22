@@ -120,6 +120,9 @@ static float collective_curve(const float input, const float *curve,
 
 volatile enum actuator_interlock actuator_interlock = ACTUATOR_INTERLOCK_OK;
 
+//troubleshooting
+static tshootData tsdat;
+
 /**
  * @brief Module initialization
  * @return 0
@@ -142,6 +145,12 @@ int32_t ActuatorStart()
  */
 int32_t ActuatorInitialize()
 {
+
+	// troubleshooting
+	if (tshootInitialize()  == -1) {
+		return -1;
+	}
+
 	// Register for notification of changes to ActuatorSettings
 	if (ActuatorSettingsInitialize()  == -1) {
 		return -1;
@@ -675,6 +684,10 @@ static void actuator_task(void* parameters)
 
 	// Main task loop
 	while (1) {
+		//troubleshooting
+		//setting here cause i know it will get done
+    	tshootSet(&tsdat);
+
 		/* If settings objects have changed, update our internal
 		 * state appropriately.
 		 */
@@ -772,12 +785,18 @@ static void actuator_task(void* parameters)
 		normalize_input_data(this_systime, &desired_vect, &armed,
 				&spin_while_armed, &stabilize_now);
 
+		//troubleshooting
+		memcpy(tsdat.desired_vect,desired_vect, sizeof(desired_vect));
+
 		/* Multiply the actuators x desired matrix by the
 		 * desired x 1 column vector. */
 		matrix_mul_check(motor_mixer, desired_vect, motor_vect,
 				MAX_MIX_ACTUATORS,
 				MIXERSETTINGS_MIXER1VECTOR_NUMELEM,
 				1);
+
+		//troubleshooting
+		memcpy(tsdat.motor_vect,motor_vect, sizeof(motor_vect));
 
 		/* Perform clipping adjustments on the outputs, along with
 		 * state-related corrections (spin while armed, disarmed, etc).
@@ -786,6 +805,9 @@ static void actuator_task(void* parameters)
 		 */
 		post_process_scale_and_commit(motor_vect, dT, armed,
 				spin_while_armed, stabilize_now);
+
+		//troubleshooting
+		memcpy(tsdat.motor_vect2,motor_vect, sizeof(motor_vect));
 
 		/* If we got this far, everything is OK. */
 		AlarmsClear(SYSTEMALARMS_ALARM_ACTUATOR);

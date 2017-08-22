@@ -2,11 +2,14 @@
 <xml>
 	<object name="tshoot" singleinstance="true" settings="false">
 		<description>A struct for troubleshooting</description>
-		<field name="spare" units="ukn" type="float" elements="10"/>
-		<field name="test" units="shit tons" type="float" elements="1"/>
+		<field name="desired_vect" units="ukn" type="float" elements="8"/>
+		<field name="motor_vect" units="ukn" type="float" elements="10"/>
+		<field name="motor_vect2" units="ukn" type="float" elements="10"/>
+		<field name="command" units="ukn" type="float" elements="10"/>
+		<field name="spare" units="shit tons" type="float" elements="6"/>
 		<access gcs="readwrite" flight="readwrite"/>
 		<telemetrygcs acked="false" updatemode="manual" period="0"/>
-		<telemetryflight acked="false" updatemode="throttled" period="1000"/>
+		<telemetryflight acked="false" updatemode="throttled" period="2000"/>
 		<logging updatemode="manual" period="0"/>
 	</object>
 </xml>
