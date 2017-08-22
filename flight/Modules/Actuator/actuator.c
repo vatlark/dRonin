@@ -348,7 +348,8 @@ static void compute_one_mixer(int mixnum,
 
 	ActuatorCommandData actCmd;
 	ActuatorCommandGet(&actCmd);
-	float rotorTiltActual = actCmd.Channel[4]*90.0f; //assuming full range of rotation is 90d
+	//float rotorTiltActual = actCmd.Channel[4]*90.0f; //assuming full range of rotation is 90d
+	float rotorTiltActual = 0.0;
 
 	// rotate the mixture of a tiltrotor
 	if (type == MIXERSETTINGS_MIXER1TYPE_MOTOR) //cause i assume only the motors will be tilting

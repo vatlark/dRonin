@@ -60,9 +60,6 @@
 #include "manualcontrolcommand.h"
 #include "vbarsettings.h"
 
-//for tiltrotor quick and dirty
-#include "actuatorcommand.h"
-
 // Math libraries
 #include "coordinate_conversions.h"
 #include "physical_constants.h"
@@ -535,16 +532,6 @@ static void stabilizationTask(void* parameters)
 		local_attitude_error[ROLL] = trimmedAttitudeSetpoint.Roll - attitudeActual.Roll;
 		local_attitude_error[PITCH] = trimmedAttitudeSetpoint.Pitch - attitudeActual.Pitch;
 		local_attitude_error[YAW] = trimmedAttitudeSetpoint.Yaw - attitudeActual.Yaw;
-
-		//setup for tilt rotor stabilization, assuming tilting in pitch
-		//the idea is that the stabilizer will still command a pitch, 
-		//then the mixer will descide how much of that is achieved through tilt and vehicle pitch 
-		
-		//get actuator commanded position
-		ActuatorCommandData actCmd;
-		ActuatorCommandGet(&actCmd);
-		float rotorTiltActual = actCmd.Channel[4]*90.0f; //assuming full range of rotation is 90deg
-		local_attitude_error[PITCH] -= rotorTiltActual;
 
 		// Wrap yaw error to [-180,180]
 		local_attitude_error[YAW] = circular_modulus_deg(local_attitude_error[YAW]);
