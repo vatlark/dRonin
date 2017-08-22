@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<xml>
+	<object name="tshoot" singleinstance="true" settings="false">
+		<description>A struct for troubleshooting</description>
+		<field name="spare" units="ukn" type="float" elements="10"/>
+		<field name="test" units="shit tons" type="float" elements="1"/>
+		<access gcs="readwrite" flight="readwrite"/>
+		<telemetrygcs acked="false" updatemode="manual" period="0"/>
+		<telemetryflight acked="false" updatemode="throttled" period="1000"/>
+		<logging updatemode="manual" period="0"/>
+	</object>
+</xml>

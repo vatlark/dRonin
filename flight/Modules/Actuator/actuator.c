@@ -53,6 +53,7 @@
 #include "pios_queue.h"
 #include "misc_math.h"
 #include "coordinate_conversions.h"
+#include "tshoot.h"
 
 // Private constants
 #define MAX_QUEUE_SIZE 2
