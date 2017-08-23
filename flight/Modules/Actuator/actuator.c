@@ -111,6 +111,7 @@ static MixerSettingsCurve2SourceOptions curve2_src;
 static void actuator_task(void* parameters);
 
 static float scale_channel(float value, int idx);
+static float unscale_channel(float value, int idx);
 static void set_failsafe();
 
 static float throt_curve(const float input, const float *curve,
@@ -352,20 +353,22 @@ static void compute_one_mixer(int mixnum,
 		}
 	}
 
-	// servo needs to be mixed to respond mostly to pitch, 
-	// but the thrust(-big),yaw(+small), and roll(-small) should represent the cost of the configuration change 
-	// should use the second curve to back out the tilt angle
-
+	
+	//for tiltrotor quick and dirty
+	//////////////////////////////////////////////////
+	//get actuator commanded position
 	ActuatorCommandData actCmd;
 	ActuatorCommandGet(&actCmd);
-	//float rotorTiltActual = actCmd.Channel[4]*90.0f; //assuming full range of rotation is 90d
-	float rotorTiltActual = 0.0;
-
+	int idx = 4;
+	float value = unscale_channel(actCmd.Channel[idx], idx);//get -1to1 value
+	float rotorTiltActual = value*90.0f; //assuming full range of rotation is 90deg
+	rotorTiltActual = 0;
 	// rotate the mixture of a tiltrotor
 	if (type == MIXERSETTINGS_MIXER1TYPE_MOTOR) //cause i assume only the motors will be tilting
 	{
 		transformActuatorMixture (&motor_mixer[mixnum], rotorTiltActual);
 	}
+	//////////////////////////////////////////////////
 }
 
 /* Here be dragons */
@@ -713,6 +716,11 @@ static void actuator_task(void* parameters)
 			MixerSettingsCurve2SourceGet(&curve2_src);
 		}
 
+		//for tiltrotor quick and dirty
+		//need to recalculate to update rotation
+		//compute_mixer();
+		//memcpy(&tsdat.Mixer1Vector, motor_mixer, sizeof(motor_mixer)/2);
+
 		PIOS_WDG_UpdateFlag(PIOS_WDG_ACTUATOR);
 
 		UAVObjEvent ev;
@@ -786,7 +794,7 @@ static void actuator_task(void* parameters)
 				&spin_while_armed, &stabilize_now);
 
 		//troubleshooting
-		memcpy(tsdat.desired_vect,desired_vect, sizeof(desired_vect));
+		memcpy(tsdat.desired_vect, desired_vect, sizeof(desired_vect));
 
 		/* Multiply the actuators x desired matrix by the
 		 * desired x 1 column vector. */
@@ -796,7 +804,7 @@ static void actuator_task(void* parameters)
 				1);
 
 		//troubleshooting
-		memcpy(tsdat.motor_vect,motor_vect, sizeof(motor_vect));
+		memcpy(tsdat.motor_vect, motor_vect, sizeof(motor_vect));
 
 		/* Perform clipping adjustments on the outputs, along with
 		 * state-related corrections (spin while armed, disarmed, etc).
@@ -807,7 +815,7 @@ static void actuator_task(void* parameters)
 				spin_while_armed, stabilize_now);
 
 		//troubleshooting
-		memcpy(tsdat.motor_vect2,motor_vect, sizeof(motor_vect));
+		memcpy(tsdat.motor_vect2, motor_vect, sizeof(motor_vect));
 
 		/* If we got this far, everything is OK. */
 		AlarmsClear(SYSTEMALARMS_ALARM_ACTUATOR);
@@ -872,6 +880,27 @@ static float scale_channel(float value, int idx)
 	}
 
 	return valueScaled;
+}
+
+//for tiltrotor quick and dirty
+/**
+ * Convert channel from servo pulse duration in microseconds to -1/+1
+ */
+static float unscale_channel(float value, int idx)
+{
+	float max = actuatorSettings.ChannelMax[idx];
+	float min = actuatorSettings.ChannelMin[idx];
+	float neutral = actuatorSettings.ChannelNeutral[idx];
+
+	float valueUnScaled;
+	// Scale
+	if (value >= 0.0f) {
+		valueUnScaled = (value-neutral)/(max-neutral);
+	} else {
+		valueUnScaled = (value-neutral)/(neutral-min);
+	}
+
+	return valueUnScaled;
 }
 
 static float channel_failsafe_value(int idx)
