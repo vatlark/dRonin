@@ -121,8 +121,9 @@ static float collective_curve(const float input, const float *curve,
 
 volatile enum actuator_interlock actuator_interlock = ACTUATOR_INTERLOCK_OK;
 
-//troubleshooting
+//troubleshooting tiltrotor quick and dirty
 static tshootData tsdat;
+static float motor_mixer_UNtilted[MAX_MIX_ACTUATORS * MIXERSETTINGS_MIXER1VECTOR_NUMELEM];
 
 /**
  * @brief Module initialization
@@ -361,9 +362,16 @@ static void compute_one_mixer(int mixnum,
 	ActuatorCommandGet(&actCmd);
 	int idx = 4;
 	float value = unscale_channel(actCmd.Channel[idx], idx);//get -1to1 value
-	float rotorTiltActual = value*90.0f; //assuming full range of rotation is 90deg
-	rotorTiltActual = 0;
+	float rotorTiltActual = value*90.0f*3.14f/180.0f; //assuming full range of rotation is 90deg
+	tsdat.motor_vect2[0]= value;
+	tsdat.motor_vect2[1]=rotorTiltActual;
+	//rotorTiltActual = 0;
 	// rotate the mixture of a tiltrotor
+	for (int i = 0; i < MIXERSETTINGS_MIXER1VECTOR_NUMELEM; i++) {
+		// Ensure unused types are zero-filled
+		motor_mixer_UNtilted[mixnum+i] = motor_mixer[mixnum+i];
+	}
+	
 	if (type == MIXERSETTINGS_MIXER1TYPE_MOTOR) //cause i assume only the motors will be tilting
 	{
 		transformActuatorMixture (&motor_mixer[mixnum], rotorTiltActual);
@@ -718,8 +726,15 @@ static void actuator_task(void* parameters)
 
 		//for tiltrotor quick and dirty
 		//need to recalculate to update rotation
-		//compute_mixer();
-		//memcpy(&tsdat.Mixer1Vector, motor_mixer, sizeof(motor_mixer)/2);
+		compute_mixer();
+		int siz= 8*sizeof(float);
+		memcpy(&tsdat.Mixer1Vector, &motor_mixer[0], siz);
+		//memcpy(&tsdat.Mixer2Vector, &motor_mixer[8], siz);
+		memcpy(&tsdat.Mixer2Vector, &motor_mixer_UNtilted[0], siz);
+		memcpy(&tsdat.Mixer3Vector, &motor_mixer[8*2], siz);
+		memcpy(&tsdat.Mixer4Vector, &motor_mixer[8*3], siz);
+		//memcpy(&tsdat.Mixer5Vector, &motor_mixer[8*4], siz);
+		//memcpy(&tsdat.Mixer6Vector, motor_mixer+siz*5, siz);
 
 		PIOS_WDG_UpdateFlag(PIOS_WDG_ACTUATOR);
 
@@ -815,7 +830,7 @@ static void actuator_task(void* parameters)
 				spin_while_armed, stabilize_now);
 
 		//troubleshooting
-		memcpy(tsdat.motor_vect2, motor_vect, sizeof(motor_vect));
+		//memcpy(tsdat.motor_vect2, motor_vect, sizeof(motor_vect));
 
 		/* If we got this far, everything is OK. */
 		AlarmsClear(SYSTEMALARMS_ALARM_ACTUATOR);
