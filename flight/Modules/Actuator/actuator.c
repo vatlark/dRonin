@@ -362,9 +362,12 @@ static void compute_one_mixer(int mixnum,
 	ActuatorCommandGet(&actCmd);
 	int idx = 4;
 	float value = unscale_channel(actCmd.Channel[idx], idx);//get -1to1 value
-	float rotorTiltActual = value*90.0f*3.14f/180.0f; //assuming full range of rotation is 90deg
+	float rotorTiltActual = value*53.0f*3.14f/180.0f; //assuming full range of rotation is +/-53deg
 	tsdat.motor_vect2[0]= value;
-	tsdat.motor_vect2[1]=rotorTiltActual;
+	tsdat.motor_vect2[1]=rotorTiltActual*180.0f/3.14f;
+	tsdat.motor_vect2[2]=actuatorSettings.ChannelMax[idx];
+	tsdat.motor_vect2[3]=actuatorSettings.ChannelMin[idx];
+	tsdat.motor_vect2[4]=actuatorSettings.ChannelNeutral[idx];
 	//rotorTiltActual = 0;
 	// rotate the mixture of a tiltrotor
 	for (int i = 0; i < MIXERSETTINGS_MIXER1VECTOR_NUMELEM; i++) {
@@ -909,7 +912,7 @@ static float unscale_channel(float value, int idx)
 
 	float valueUnScaled;
 	// Scale
-	if (value >= 0.0f) {
+	if (value >= neutral) {
 		valueUnScaled = (value-neutral)/(max-neutral);
 	} else {
 		valueUnScaled = (value-neutral)/(neutral-min);
