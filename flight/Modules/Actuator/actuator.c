@@ -54,6 +54,7 @@
 #include "misc_math.h"
 #include "coordinate_conversions.h"
 #include "tshoot.h"
+#include "attitudeactual.h"
 
 // Private constants
 #define MAX_QUEUE_SIZE 2
@@ -334,6 +335,17 @@ static void transformActuatorMixture(float motormix [MIXERSETTINGS_MIXER1VECTOR_
 	motormix[4] = Mrotated[2]; //yaw
 }
 
+//for tiltrotor quick and dirty
+#define tiltFullAngle 53.0f
+static float tiltratio2rad(float ratio)
+{
+	return ratio*tiltFullAngle*3.14f/180.0f;
+}
+static float tiltdeg2ratio(float deg)
+{
+	return deg/tiltFullAngle;
+}
+
 static void compute_one_mixer(int mixnum,
 		int16_t (*vals)[MIXERSETTINGS_MIXER1VECTOR_NUMELEM],
 		MixerSettingsMixer1TypeOptions type)
@@ -361,9 +373,9 @@ static void compute_one_mixer(int mixnum,
 	ActuatorCommandData actCmd;
 	ActuatorCommandGet(&actCmd);
 	int idx = 4;
-	float value = unscale_channel(actCmd.Channel[idx], idx);//get -1to1 value
-	float rotorTiltActual = value*53.0f*3.14f/180.0f; //assuming full range of rotation is +/-53deg
-	tsdat.motor_vect2[0]= value;
+	float ratio = unscale_channel(actCmd.Channel[idx], idx);//get -1to1 value
+	float rotorTiltActual = tiltratio2rad(ratio); //assuming full range of rotation is +/-53deg
+	tsdat.motor_vect2[0]= ratio;
 	tsdat.motor_vect2[1]=rotorTiltActual*180.0f/3.14f;
 	tsdat.motor_vect2[2]=actuatorSettings.ChannelMax[idx];
 	tsdat.motor_vect2[3]=actuatorSettings.ChannelMin[idx];
@@ -615,6 +627,16 @@ static void normalize_input_data(uint32_t this_systime,
 		manual_control_cmd_updated = false;
 		ManualControlCommandAccessoryGet(
 			&(*desired_vect)[MIXERSETTINGS_MIXER1VECTOR_ACCESSORY0]);
+
+		// for tiltrotor quick and dirty
+		// should be moved to stabilization, and tilt added to stabilizationDesired
+		// subtract out the actual(or maybe commanded) pitch from the tilt command.
+		AttitudeActualData attActual; 
+		AttitudeActualGet(&attActual);
+		tsdat.motor_vect2[6] = (*desired_vect)[MIXERSETTINGS_MIXER1VECTOR_ACCESSORY0];
+		tsdat.motor_vect2[7] = tiltdeg2ratio(attActual.Pitch);
+		(*desired_vect)[MIXERSETTINGS_MIXER1VECTOR_ACCESSORY0] -= tiltdeg2ratio(attActual.Pitch);
+		//saturation/clipping is checked for at the end
 	}
 
 	if (airframe_type == SYSTEMSETTINGS_AIRFRAMETYPE_HELICP) {
